@@ -1,4 +1,5 @@
 -- Criação dos bancos
+CREATE DATABASE IF NOT EXISTS semchamada CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci;
 CREATE DATABASE IF NOT EXISTS compartilhados CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci;
 CREATE DATABASE IF NOT EXISTS censo CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci;
 CREATE DATABASE IF NOT EXISTS email CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci;
