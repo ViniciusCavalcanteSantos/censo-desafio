@@ -61,6 +61,7 @@ return [
             'password'  => env('DB_PASSWORD'),
             'charset'   => 'utf8',
             'collation' => 'utf8_unicode_ci',
+            'strict'    => false,
         ],
 
         'compartilhados' => [
@@ -72,6 +73,7 @@ return [
             'password'  => env('DB_PASSWORD'),
             'charset'   => 'utf8',
             'collation' => 'utf8_unicode_ci',
+            'strict'    => false,
         ],
 
         'censo' => [
@@ -83,6 +85,7 @@ return [
             'password'  => env('DB_PASSWORD'),
             'charset'   => 'utf8',
             'collation' => 'utf8_unicode_ci',
+            'strict'    => false,
         ],
 
         'email' => [
@@ -94,6 +97,7 @@ return [
             'password'  => env('DB_PASSWORD'),
             'charset'   => 'utf8',
             'collation' => 'utf8_unicode_ci',
+            'strict'    => false,
         ],
     ],
 
