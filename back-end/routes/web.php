@@ -19,3 +19,7 @@ $router->group(['prefix' => 'instituicao_usuarios'], function () use ($router) {
     $router->get('/byid', ['uses' => 'InstituicaoUsuarioController@byId']);
     $router->get('/listar', ['uses' => 'InstituicaoUsuarioController@listar']);
 });
+
+$router->group(['prefix' => 'blacklist'], function () use ($router) {
+    $router->delete('/remover', ['uses' => 'InstituicaoUsuarioController@removerBlacklist']);
+});

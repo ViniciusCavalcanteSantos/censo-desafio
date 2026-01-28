@@ -97,4 +97,37 @@ class InstituicaoUsuarioController extends Controller
             return false;
         }
     }
+
+    public function removerBlacklist(Request $request) {
+        try {
+            $email = $request->input('email');
+            $blacklist = \App\Model\BlackList::where('black_list_mail', $email)->first();
+
+            if (!$blacklist) {
+                return new JsonResponse(['success' => false, 'message' => 'E-mail não encontrado na blacklist.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $dataInclusao = new \DateTime($blacklist->black_list_data_inclusao);
+            $agora = new \DateTime();
+            $diff = $agora->diff($dataInclusao);
+            $horasPassadas = ($diff->days * 24) + $diff->h;
+
+            $tempoMinimo = config('constants.HORAS_MINIMAS_BLACKLIST');
+
+            if ($horasPassadas < $tempoMinimo) {
+                $horasRestantes = $tempoMinimo - $horasPassadas;
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => "Aguarde {$horasRestantes} horas para remover este e-mail novamente."
+                ], Response::HTTP_FORBIDDEN);
+            }
+
+            $blacklist->delete();
+
+            return new JsonResponse(['success' => true, 'message' => 'E-mail removido com sucesso!'], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'message' => 'Erro ao processar solicitação.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
