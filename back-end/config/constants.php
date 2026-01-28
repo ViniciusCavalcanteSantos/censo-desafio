@@ -7,4 +7,5 @@ return [
     'CODIGO_SEMCHAMADA'         => 6,
     'PRIMEIRO_LIMIT'            => 100,
     'SEGUNDO_LIMIT'             => 50,
+    'HORAS_MINIMAS_BLACKLIST' => 24,
 ];
