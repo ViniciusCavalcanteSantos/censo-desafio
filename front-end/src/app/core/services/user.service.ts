@@ -1,6 +1,5 @@
 import {inject, Injectable} from '@angular/core';
-import {map, Observable, of} from 'rxjs';
-import {delay} from 'rxjs/operators';
+import {map} from 'rxjs';
 import {User} from '../models/user.interface';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 

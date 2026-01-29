@@ -1,6 +1,6 @@
 import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
-import { UserListComponent } from '../components/user-list/user-list.component';
-import {ToastComponent} from "../components/shared/ui/toast/toast.component";
+import {UserListComponent} from "./features/users/user-list/user-list.component";
+import {ToastComponent} from "./shared/ui/toast/toast.component";
 
 @Component({
   selector: 'app-root',
