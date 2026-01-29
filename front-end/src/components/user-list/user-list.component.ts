@@ -1,4 +1,4 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed} from '@angular/core';
+import {Component, ChangeDetectionStrategy, inject, signal, computed, OnInit} from '@angular/core';
 import {CommonModule, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {toSignal} from '@angular/core/rxjs-interop';
@@ -226,6 +226,7 @@ import {ToastService} from "../shared/ui/toast/toast.service";
                   [user]="selectedUser()!"
                   (close)="selectedUser.set(null)"
                   (saveUser)="onSaveUser($event)"
+                  (userUpdated)="refreshUsers()"
           ></app-edit-user-modal>
       }
 
@@ -247,7 +248,7 @@ import {ToastService} from "../shared/ui/toast/toast.service";
       }
   `
 })
-export class UserListComponent {
+export class UserListComponent implements OnInit {
   private readonly userService = inject(UserService);
   private toast = inject(ToastService);
 
@@ -257,14 +258,12 @@ export class UserListComponent {
   showConfirmModal = signal<boolean>(false);
   userPendingRemoval = signal<User | null>(null);
 
-  rawUsers = toSignal(this.userService.getUsers(), {initialValue: [] as User[]});
-
-  isLoading = computed(() => this.rawUsers().length === 0);
+  users = signal<User[]>([]);
+  isLoading = signal<boolean>(true);
 
   filteredUsers = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
-    const users = this.rawUsers();
-
+    const users = this.users();
     if (!query) return users;
 
     return users.filter((user: User) =>
@@ -273,6 +272,21 @@ export class UserListComponent {
       user.inst_usua_codigo.includes(query)
     );
   });
+
+  ngOnInit() {
+    this.refreshUsers();
+  }
+
+  refreshUsers() {
+    this.isLoading.set(true);
+    this.userService.getUsers().subscribe({
+      next: (data) => {
+        this.users.set(data);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false)
+    });
+  }
 
   getInitials(name: string): string {
     return name ? name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : '';
@@ -283,8 +297,7 @@ export class UserListComponent {
       next: (response) => {
         this.toast.show(`Sucesso! O usuário ${updatedUser.usua_nome} foi atualizado.`, 'success');
         this.selectedUser.set(null);
-
-        window.location.reload();
+        this.refreshUsers();
       },
       error: (err) => {
         console.error('Erro ao salvar:', err);
@@ -319,7 +332,7 @@ export class UserListComponent {
         next: (response: any) => {
           this.closeModal();
           this.toast.show(`E-mail removido da blacklist com sucesso!`, 'success');
-          window.location.reload();
+          this.refreshUsers();
         },
         error: (err) => {
           console.error(err);

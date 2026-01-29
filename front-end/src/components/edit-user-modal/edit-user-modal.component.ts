@@ -139,6 +139,7 @@ export class EditUserModalComponent {
   @Input({ required: true }) set user(value: User) { this.editableUser = { ...value }; }
   @Output() close = new EventEmitter<void>();
   @Output() saveUser = new EventEmitter<User>();
+  @Output() userUpdated = new EventEmitter<void>();
 
   editableUser!: User;
   showConfirm = signal(false);
