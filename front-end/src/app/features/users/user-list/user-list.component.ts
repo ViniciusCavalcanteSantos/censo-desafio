@@ -57,7 +57,6 @@ export class UserListComponent implements OnInit {
   });
 
   ngOnInit() {
-    // Configura o debounce da pesquisa (espera 500ms parar de digitar)
     this.searchSubject.pipe(
       debounceTime(500),
       distinctUntilChanged()
@@ -110,20 +109,6 @@ export class UserListComponent implements OnInit {
 
   getInitials(name: string): string {
     return name ? name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : '';
-  }
-
-  onSaveUser(updatedUser: User) {
-    this.userService.updateUser(updatedUser).subscribe({
-      next: (response) => {
-        this.toast.show(`Sucesso! O usuário ${updatedUser.usua_nome} foi atualizado.`, 'success');
-        this.selectedUser.set(null);
-        this.refreshUsers();
-      },
-      error: (err) => {
-        console.error('Erro ao salvar:', err);
-        this.toast.show(`Erro ao tentar salvar.`, 'error');
-      }
-    });
   }
 
   removeUser(user: User) {

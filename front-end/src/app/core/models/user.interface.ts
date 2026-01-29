@@ -4,6 +4,13 @@ export interface User {
   usua_nome: string;
   usua_email: string;
   usuario_perfil: string;
+
+  usua_cpf?: string;
+  usua_sexo?: string;
+  usua_data_nascimento?: string;
+  usua_foto?: string;
+  usua_foto_miniatura?: string;
+
   is_blacklisted: number;
   can_be_removed: number;
   blacklist_deadline?: string;
