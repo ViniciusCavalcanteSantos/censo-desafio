@@ -14,6 +14,8 @@ export interface User {
   is_blacklisted: number;
   can_be_removed: number;
   blacklist_deadline?: string;
+
+  imgError?: boolean;
 }
 
 export interface PaginatedResponse<T> {
