@@ -2,11 +2,11 @@ import {inject, Injectable} from '@angular/core';
 import {map} from 'rxjs';
 import {User} from '../models/user.interface';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
-
+import {environment} from "../../../environments/environment";
 
 @Injectable({providedIn: 'root'})
 export class UserService {
-  private apiUrl = 'http://192.168.0.5:8000/instituicao_usuarios';
+  private apiUrl = `${environment.apiUrl}/instituicao_usuarios`;
   private http: HttpClient = inject(HttpClient);
 
   private headers = new HttpHeaders({
