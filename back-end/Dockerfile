@@ -1,3 +1,4 @@
+
 FROM ubuntu:22.04
 
 WORKDIR /var/www/html
@@ -23,12 +24,19 @@ RUN apt-get install -y \
     php7.0-zip \
     php7.0-xml \
     php7.0-curl \
-    php7.0-gd
+    php7.0-gd \
+    php7.0-dom
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY . /var/www/html
+RUN cp .env.example .env
+RUN composer install --no-interaction --optimize-autoloader
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 
 EXPOSE 8000
 
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
+CMD ["sh", "-c", "php artisan db:seed --force && php -S 0.0.0.0:8000 -t public"]

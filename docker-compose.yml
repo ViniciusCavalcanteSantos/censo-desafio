@@ -1,0 +1,60 @@
+services:
+  api:
+    build:
+      context: ./back-end
+      dockerfile: Dockerfile
+    container_name: blacklist_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./back-end:/var/www/html
+      - /var/www/html/vendor
+      - /var/www/html/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - blacklist_net
+  web:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    container_name: blacklist_web
+    restart: unless-stopped
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./front-end:/app
+      - /app/node_modules
+    networks:
+      - blacklist_net
+
+  db:
+    image: mysql:5.7
+    platform: linux/amd64
+    container_name: blacklist_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: censo
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./back-end/database/migrations/exemplo_base.sql:/docker-entrypoint-initdb.d/init_bases.sql
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8 --collation-server=utf8_unicode_ci
+    networks:
+      - blacklist_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+
+networks:
+  blacklist_net:
+    driver: bridge
+
+volumes:
+  mysql_data:
