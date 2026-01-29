@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, computed, signal, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -60,25 +60,23 @@ export class PaginationComponent {
   visiblePages = computed(() => {
     const total = this.totalPages();
     const current = this.currentPage();
-    const delta = 1; // Quantas páginas mostrar ao redor da atual
+    const delta = 1;
     const range: number[] = [];
     const rangeWithDots: number[] = [];
     let l: number | undefined;
 
-    // 1. Gera o range bruto (ex: 1, 20, e os vizinhos do atual)
     for (let i = 1; i <= total; i++) {
       if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
         range.push(i);
       }
     }
 
-    // 2. Adiciona os "..." (-1 representa reticências) onde houver buracos
     for (let i of range) {
       if (l) {
         if (i - l === 2) {
           rangeWithDots.push(l + 1);
         } else if (i - l !== 1) {
-          rangeWithDots.push(-1); // -1 será renderizado como "..."
+          rangeWithDots.push(-1);
         }
       }
       rangeWithDots.push(i);

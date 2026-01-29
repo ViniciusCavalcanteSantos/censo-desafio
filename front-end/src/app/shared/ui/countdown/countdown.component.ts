@@ -11,7 +11,7 @@ import {CommonModule} from '@angular/common';
 export class CountdownComponent implements OnInit, OnDestroy {
   @Input({required: true}) deadline!: string;
 
-  timeLeft = signal<string>('Calculando...'); // Texto inicial
+  timeLeft = signal<string>('Calculando...');
   private intervalId: any;
   private ngZone = inject(NgZone);
   private targetDate: number = 0;
