@@ -188,17 +188,22 @@
         </table>
     </div>
 
-    <div class="px-8 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center text-sm">
-              <span class="text-gray-500">Mostrando <span
-                      class="font-medium text-gray-900">{{ filteredUsers().length }}</span> registros</span>
-        <div class="flex gap-1">
-            <button class="px-3 py-1 rounded border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                    disabled>Anterior
-            </button>
-            <button class="px-3 py-1 rounded border border-gray-200 bg-white text-gray-500 hover:bg-gray-50">
-                Próximo
-            </button>
-        </div>
+    <div class="px-8 py-4 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
+
+        <span class="text-gray-500">
+          Página
+          <span class="font-medium text-gray-900">{{ currentPage() }}</span>
+          de
+          <span class="font-medium text-gray-900">{{ totalPages() }}</span>
+          (Total: {{ totalItems() }})
+        </span>
+
+        <app-pagination
+                [current]="currentPage()"
+                [total]="totalItems()"
+                [size]="pageSize()"
+                (pageChange)="onPageChange($event)">
+        </app-pagination>
     </div>
 </div>
 

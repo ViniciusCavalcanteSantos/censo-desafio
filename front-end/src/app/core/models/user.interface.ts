@@ -8,3 +8,14 @@ export interface User {
   can_be_removed: number;
   blacklist_deadline?: string;
 }
+
+export interface PaginatedResponse<T> {
+  status: boolean;
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    last_page: number;
+    per_page: number;
+  };
+}
