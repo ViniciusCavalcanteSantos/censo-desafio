@@ -1,20 +1,12 @@
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
      (click)="close.emit()">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col"
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col"
          (click)="$event.stopPropagation()">
 
         <div class="px-8 py-6 border-b border-gray-100 bg-white">
             <div class="flex justify-between items-start">
                 <div class="space-y-1">
                     <h3 class="text-xl font-bold text-gray-900 tracking-tight">Editar Usuário</h3>
-
-                    <div class="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                        </svg>
-                        {{ editableUser.usua_email }}
-                    </div>
                 </div>
 
                 <button (click)="close.emit()"
@@ -27,32 +19,76 @@
             </div>
         </div>
 
+
+
         <div class="p-8 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            <div class="space-y-1.5">
-                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Nome Completo</label>
-                <input type="text" [(ngModel)]="editableUser.usua_nome"
-                       class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white text-gray-800 placeholder-gray-400 font-medium">
-            </div>
+                <div class="space-y-4">
 
-            <div class="space-y-1.5">
-                <label class="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Perfil de
-                    Acesso</label>
-                <div class="relative">
-                    <select [(ngModel)]="editableUser.usuario_perfil"
-                            class="w-full pl-4 pr-10 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white text-gray-800 appearance-none font-medium cursor-pointer">
-                        <option value="Administrador">Administrador</option>
-                        <option value="Professor">Professor</option>
-                    </select>
+                    <div class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer relative" (click)="fileInput.click()">
 
-                    <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M19 9l-7 7-7-7"/>
-                        </svg>
+                        <input #fileInput type="file" (change)="onFileSelected($event)" class="hidden" accept="image/*">
+
+                        @if (previewUrl || editableUser.usua_foto) {
+                            <img [src]="previewUrl || resolveImageUrl(editableUser.usua_foto)" class="w-24 h-24 rounded-full object-cover mb-2 border border-gray-200">
+                            <span class="text-xs text-blue-600 font-semibold">Alterar foto</span>
+                        } @else {
+                            <div class="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                                <i class="fa-solid fa-camera text-gray-400 text-2xl"></i>
+                            </div>
+                            <span class="text-xs text-gray-500">Clique para enviar foto</span>
+                        }
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Nome</label>
+                        <input type="text" [(ngModel)]="editableUser.usua_nome" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">E-mail</label>
+                        <input type="email" [(ngModel)]="editableUser.usua_email" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm">
                     </div>
                 </div>
+
+                <div class="space-y-4">
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Código / Matrícula</label>
+                        <input type="text" [(ngModel)]="editableUser.inst_usua_codigo" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">CPF (Apenas números)</label>
+                        <input type="text" [(ngModel)]="editableUser.usua_cpf" maxlength="11" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm" placeholder="00000000000">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Data de Nascimento</label>
+                        <input type="date" [(ngModel)]="editableUser.usua_data_nascimento" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Sexo</label>
+                        <select [(ngModel)]="editableUser.usua_sexo" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                            <option [ngValue]="null">Selecione</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Feminino</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Função</label>
+                        <select [(ngModel)]="editableUser.usuario_perfil" class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                            <option value="Diretor">Diretor</option>
+                            <option value="Professor">Professor</option>
+                        </select>
+                    </div>
+
+                </div>
             </div>
+
 
             @if (editableUser.is_blacklisted === 1) {
                 <div class="mt-6 pt-6 border-t border-dashed border-gray-200">
