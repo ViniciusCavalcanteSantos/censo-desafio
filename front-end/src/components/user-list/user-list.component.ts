@@ -9,6 +9,7 @@ import {TooltipDirective} from '../../directives/tooltip.directive';
 import {EditUserModalComponent} from '../edit-user-modal/edit-user-modal.component';
 import {CountdownComponent} from "../countdown/countdown.component";
 import {ConfirmModalComponent} from "../modals/confirm-modal.component";
+import {ToastService} from "../shared/ui/toast/toast.service";
 
 @Component({
   selector: 'app-user-list',
@@ -248,6 +249,7 @@ import {ConfirmModalComponent} from "../modals/confirm-modal.component";
 })
 export class UserListComponent {
   private readonly userService = inject(UserService);
+  private toast = inject(ToastService);
 
   searchQuery = signal<string>('');
   selectedUser = signal<User | null>(null);
@@ -277,26 +279,23 @@ export class UserListComponent {
   }
 
   onSaveUser(updatedUser: User) {
-
     this.userService.updateUser(updatedUser).subscribe({
       next: (response) => {
-        alert(`Sucesso! O usuário ${updatedUser.usua_nome} foi atualizado.`);
-
+        this.toast.show(`Sucesso! O usuário ${updatedUser.usua_nome} foi atualizado.`, 'success');
         this.selectedUser.set(null);
 
         window.location.reload();
       },
       error: (err) => {
         console.error('Erro ao salvar:', err);
-        alert('Erro ao tentar salvar. Verifique o console para detalhes.');
+        this.toast.show(`Erro ao tentar salvar.`, 'error');
       }
     });
   }
 
   removeUser(user: User) {
     if (confirm(`ATENÇÃO: Deseja realmente remover o acesso de ${user.usua_nome}?`)) {
-      console.log('Removendo ID:', user.inst_usua_id);
-      alert('Usuário removido com sucesso!');
+      this.toast.show(`Usuário removido com sucesso!`, 'success');
       window.location.reload();
     }
   }
@@ -318,16 +317,13 @@ export class UserListComponent {
     if (user) {
       this.userService.removeFromBlacklist(user.usua_email).subscribe({
         next: (response: any) => {
-          // Fecha modal
           this.closeModal();
-
-          // Feedback e Reload (ou atualização local)
-          alert('E-mail removido da blacklist com sucesso!');
+          this.toast.show(`E-mail removido da blacklist com sucesso!`, 'success');
           window.location.reload();
         },
         error: (err) => {
           console.error(err);
-          alert('Erro ao remover.');
+          this.toast.show(`Erro ao remover e-mail da blacklist.`, 'error');
           this.closeModal();
         }
       });

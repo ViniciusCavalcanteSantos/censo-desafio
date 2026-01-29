@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { User } from '../../models/user.interface';
 import { UserService } from '../../services/user.service';
 import { TooltipDirective } from '../../directives/tooltip.directive';
-import { CountdownComponent } from '../../components/countdown/countdown.component';
+import { CountdownComponent } from '../countdown/countdown.component';
 import {ConfirmModalComponent} from "../modals/confirm-modal.component";
+import {ToastService} from "../shared/ui/toast/toast.service";
 
 @Component({
   selector: 'app-edit-user-modal',
@@ -133,6 +134,7 @@ import {ConfirmModalComponent} from "../modals/confirm-modal.component";
 })
 export class EditUserModalComponent {
   private userService = inject(UserService);
+  private toast = inject(ToastService);
 
   @Input({ required: true }) set user(value: User) { this.editableUser = { ...value }; }
   @Output() close = new EventEmitter<void>();
@@ -156,9 +158,9 @@ export class EditUserModalComponent {
       next: () => {
         this.showConfirm.set(false);
         this.editableUser.is_blacklisted = 0;
-        alert('Usuário liberado com sucesso!');
+        this.toast.show('Usuário liberado com sucesso!', 'success')
       },
-      error: (err) => alert(err.error?.message || 'Erro ao remover')
+      error: (err) => this.toast.show(err.error?.message || 'Erro ao remover', 'success')
     });
   }
 }

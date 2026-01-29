@@ -26,6 +26,9 @@ export class UserService {
   }
 
   removeFromBlacklist(email: string) {
-    return this.http.post(`${this.apiUrl}/blacklist/remover`, {email}, {headers: this.headers});
+    return this.http.delete(`${this.apiUrl}/blacklist/remover`, {
+      headers: this.headers,
+      body: { email }
+    });
   }
 }
