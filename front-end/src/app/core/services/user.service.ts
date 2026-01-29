@@ -14,12 +14,16 @@ export class UserService {
     'Content-Type': 'application/json'
   });
 
-  getUsers(page: number = 1, limit: number = 10): Observable<PaginatedResponse<User>> {
-    const params = {
+  getUsers(page: number = 1, limit: number = 10, search: string = '', perfil: string = '', status: string = ''): Observable<PaginatedResponse<User>> {
+    const params: any = {
       inst_codigo: 1,
       page: page,
       limit: limit
     };
+
+    if (search) params.search = search;
+    if (perfil) params.perfil = perfil;
+    if (status && status !== 'todos') params.status = status;
 
     return this.http.get<PaginatedResponse<User>>(`${this.apiUrl}/listar`, {
       headers: this.headers,
