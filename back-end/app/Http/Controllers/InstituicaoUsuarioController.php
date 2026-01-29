@@ -69,28 +69,48 @@ class InstituicaoUsuarioController extends Controller
         try {
             $inst_codigo = $request->header('inst_codigo', 1);
 
-            $page = (int) $request->input('page', 1);
-            $perPage = (int) $request->input('limit', 10);
-            $offset = ($page - 1) * $perPage;
+            if ($request->has('limit')) {
+                $perPage = (int) $request->input('limit');
+                $perPage = ($perPage > 100) ? 100 : $perPage;
+            } else {
+                if ($request->has('offset')) {
+                    $perPage = config('constants.SEGUNDO_LIMIT', 50);
+                } else {
+                    $perPage = config('constants.PRIMEIRO_LIMIT', 100);
+                }
+            }
+
+            if ($request->has('page')) {
+                $page = (int) $request->input('page');
+                $offset = ($page - 1) * $perPage;
+            } else {
+                $page = 1;
+                $offset = (int) $request->input('offset', 0);
+
+                if ($offset > 0 && $perPage > 0) {
+                    $page = floor($offset / $perPage) + 1;
+                }
+            }
 
             $limitSql = " LIMIT $perPage OFFSET $offset";
 
             $usuarios = InstituicaoUsuarioRepository::listar($inst_codigo, $limitSql);
+
             $total = InstituicaoUsuarioRepository::contar($inst_codigo);
 
             return response()->json([
-                'status' => true,
+                'success' => true,
                 'data' => $usuarios,
                 'meta' => [
                     'total' => (int) $total,
-                    'page' => $page,
+                    'page' => (int) $page,
                     'last_page' => ceil($total / $perPage),
-                    'per_page' => $perPage
+                    'per_page' => (int) $perPage
                 ]
             ], 200);
 
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+            return new JsonResponse(['success' => false, 'data' => '', 'message' => $e->getMessage()], 500);
         }
     }
 

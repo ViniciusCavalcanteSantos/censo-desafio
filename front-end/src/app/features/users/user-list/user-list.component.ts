@@ -8,17 +8,24 @@ import {ConfirmModalComponent} from "../../../shared/ui/modals/confirm-modal/con
 import {UserService} from "../../../core/services/user.service";
 import {ToastService} from "../../../shared/ui/toast/toast.service";
 import {User} from "../../../core/models/user.interface";
+import {PaginationComponent} from "../../../shared/ui/pagination/pagination.component";
 
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, TooltipDirective, EditUserModalComponent, CountdownComponent, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, TooltipDirective, EditUserModalComponent, CountdownComponent, ConfirmModalComponent, PaginationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './user-list.component.html'
 })
 export class UserListComponent implements OnInit {
   private readonly userService = inject(UserService);
   private toast = inject(ToastService);
+
+  currentPage = signal(1);
+  pageSize = signal(7);
+  totalItems = signal(0);
+  // totalPages = signal(0);
+  totalPages = computed(() => Math.ceil(this.totalItems() / this.pageSize()));
 
   searchQuery = signal<string>('');
   selectedUser = signal<User | null>(null);
@@ -47,13 +54,24 @@ export class UserListComponent implements OnInit {
 
   refreshUsers() {
     this.isLoading.set(true);
-    this.userService.getUsers().subscribe({
-      next: (data) => {
-        this.users.set(data);
+
+    this.userService.getUsers(this.currentPage(), this.pageSize()).subscribe({
+      next: (response) => {
+        this.users.set(response.data);
+        this.totalItems.set(response.meta.total);
+
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: () => {
+        this.toast.show('Erro ao carregar dados', 'error');
+        this.isLoading.set(false);
+      }
     });
+  }
+
+  onPageChange(newPage: number) {
+    this.currentPage.set(newPage);
+    this.refreshUsers();
   }
 
   getInitials(name: string): string {

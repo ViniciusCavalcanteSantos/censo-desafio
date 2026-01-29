@@ -1,6 +1,6 @@
 import {inject, Injectable} from '@angular/core';
-import {map} from 'rxjs';
-import {User} from '../models/user.interface';
+import {map, Observable} from 'rxjs';
+import {PaginatedResponse, User} from '../models/user.interface';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {environment} from "../../../environments/environment";
 
@@ -14,9 +14,17 @@ export class UserService {
     'Content-Type': 'application/json'
   });
 
-  getUsers() {
-    return this.http.get<any>(`${this.apiUrl}/listar`, {headers: this.headers})
-      .pipe(map((response: { data: any; }) => response.data || []));
+  getUsers(page: number = 1, limit: number = 10): Observable<PaginatedResponse<User>> {
+    const params = {
+      inst_codigo: 1,
+      page: page,
+      limit: limit
+    };
+
+    return this.http.get<PaginatedResponse<User>>(`${this.apiUrl}/listar`, {
+      headers: this.headers,
+      params
+    });
   }
 
   updateUser(user: User) {
