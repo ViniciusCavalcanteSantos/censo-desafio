@@ -45,4 +45,23 @@ class InstituicaoUsuarioRepository
 
         return \DB::select($sql, ['inst_codigo' => $inst_codigo]);
     }
+
+    public static function contar($inst_codigo)
+    {
+        $sql = "SELECT COUNT(DISTINCT " . config('database.censo_schema')  . ".instituicao_usuarios.inst_usua_id) as total
+
+            FROM " . config('database.censo_schema')  . ".instituicao_usuarios
+            INNER JOIN " . config('database.compartilhados_schema')  . ".id_usuarios ON " . config('database.censo_schema')  . ".instituicao_usuarios.usua_id = " . config('database.compartilhados_schema')  . ".id_usuarios.usua_id
+            INNER JOIN " . config('database.censo_schema')  . ".usuario_perfil ON " . config('database.censo_schema')  . ".instituicao_usuarios.inst_usua_id = " . config('database.censo_schema')  . ".usuario_perfil.inst_usua_id
+            INNER JOIN " . config('database.censo_schema')  . ".instituicao_perfil ON " . config('database.censo_schema')  . ".usuario_perfil.perf_id = " . config('database.censo_schema')  . ".instituicao_perfil.perf_id
+            
+            WHERE " . config('database.censo_schema')  . ".instituicao_usuarios.deleted_at IS NULL
+                AND " . config('database.censo_schema')  . ".usuario_perfil.deleted_at IS NULL
+                AND " . config('database.censo_schema')  . ".instituicao_perfil.deleted_at IS NULL
+                AND " . config('database.censo_schema')  . ".instituicao_usuarios.inst_codigo = :inst_codigo";
+
+        $result = \DB::selectOne($sql, ['inst_codigo' => $inst_codigo]);
+
+        return $result ? $result->total : 0;
+    }
 }

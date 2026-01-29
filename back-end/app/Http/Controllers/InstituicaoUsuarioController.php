@@ -67,25 +67,36 @@ class InstituicaoUsuarioController extends Controller
     public function listar(Request $request)
     {
         try {
-            $inst_codigo = $request->header('inst_codigo');
+            $inst_codigo = $request->header('inst_codigo', 1);
 
-            if (!empty($request->input('offset'))) {
-                $offset = " LIMIT " . config('constants.SEGUNDO_LIMIT') . " OFFSET " . $request->input('offset');
-                $dados = InstituicaoUsuarioRepository::listar($inst_codigo, $offset);
-            } else {
-                $dados = InstituicaoUsuarioRepository::listar($inst_codigo, " LIMIT " . config('constants.PRIMEIRO_LIMIT'));
-            }
+            $page = (int) $request->input('page', 1);
+            $perPage = (int) $request->input('limit', 10);
+            $offset = ($page - 1) * $perPage;
 
-            return new JsonResponse(['success' => true, 'data' => $dados, 'message' => ''], Response::HTTP_OK);
+            $limitSql = " LIMIT $perPage OFFSET $offset";
+
+            $usuarios = InstituicaoUsuarioRepository::listar($inst_codigo, $limitSql);
+            $total = InstituicaoUsuarioRepository::contar($inst_codigo);
+
+            return response()->json([
+                'status' => true,
+                'data' => $usuarios,
+                'meta' => [
+                    'total' => (int) $total,
+                    'page' => $page,
+                    'last_page' => ceil($total / $perPage),
+                    'per_page' => $perPage
+                ]
+            ], 200);
+
         } catch (\Exception $e) {
-            return new JsonResponse(['success' => false, 'data' => '', 'message' => 'Ocorreu um erro no processamento da requisição'], Response::HTTP_BAD_REQUEST);
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-    // Função responsável por saber se a data é valida ou não, porque a data estava retornando do Eloquent "0000-00-00"
     private function validar_data($dat)
     {
-        $data = explode("-", "$dat"); // fatia a string $dat em pedados, usando - como referência
+        $data = explode("-", "$dat");
         $d = $data[2];
         $m = $data[1];
         $y = $data[0];
