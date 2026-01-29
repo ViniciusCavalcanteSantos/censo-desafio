@@ -70,7 +70,6 @@ class InstituicaoUsuarioController extends Controller
         try {
             $inst_codigo = $request->header('inst_codigo', 1);
 
-            // Filtros
             $filtros = [
                 'search' => $request->input('search'),
                 'perfil' => $request->input('perfil'),
@@ -130,25 +129,20 @@ class InstituicaoUsuarioController extends Controller
     public function salvar(Request $request)
     {
         try {
-            // 1. Definição das Regras (Apenas Nome e Email obrigatórios)
             $rules = [
                 'inst_usua_id'    => 'required|integer',
                 'usuario_nome'    => 'required|string|max:255',
                 'usuario_email'   => 'required|email|max:255',
 
-                // Campos agora Opcionais (nullable)
                 'usuario_codigo'  => 'nullable|string|max:50',
-                'usuario_cpf'     => 'nullable|digits:11', // Se vier, tem que ser 11 dígitos
+                'usuario_cpf'     => 'nullable|digits:11',
                 'usuario_funcao'  => 'nullable|string',
-
-                // Sexo restrito a M ou F
                 'usuario_sexo'    => 'nullable|in:M,F',
 
                 'data_nascimento' => 'nullable|date_format:Y-m-d',
                 'usua_foto'       => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
             ];
 
-            // 2. Mensagens de Erro Customizadas (Pt-BR)
             $messages = [
                 'required'    => 'O campo :attribute é obrigatório.',
                 'email'       => 'O campo :attribute deve conter um endereço de e-mail válido.',
@@ -161,7 +155,6 @@ class InstituicaoUsuarioController extends Controller
                 'integer'     => 'O campo :attribute deve ser um número inteiro.',
             ];
 
-            // 3. Apelidos para os campos (Para não aparecer "usuario_nome" na mensagem)
             $customAttributes = [
                 'usuario_nome'    => 'Nome',
                 'usuario_email'   => 'E-mail',
@@ -173,21 +166,30 @@ class InstituicaoUsuarioController extends Controller
                 'usua_foto'       => 'Foto'
             ];
 
-            // Executa Validação
             $validator = Validator::make($request->all(), $rules, $messages, $customAttributes);
 
             if ($validator->fails()) {
                 return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
             }
 
-            // 4. Verificação de Duplicidade (E-mail)
+            $instCodigo = $request->header('inst_codigo') ? $request->header('inst_codigo') : $request->input('inst_codigo', 1);
+
             if (InstituicaoUsuarioRepository::verificarEmailDuplicado($request->input('usuario_email'), $request->input('inst_usua_id'))) {
                 return response()->json(['success' => false, 'message' => 'Este e-mail já está sendo utilizado por outro usuário.'], 409);
             }
 
+            if (!empty($request->input('usuario_codigo'))) {
+                if (InstituicaoUsuarioRepository::verificarMatriculaDuplicada(
+                    $request->input('usuario_codigo'),
+                    $request->input('inst_usua_id'),
+                    $instCodigo
+                )) {
+                    return response()->json(['success' => false, 'message' => 'Esta matrícula/código já está em uso por outro usuário.'], 409);
+                }
+            }
+
             $dados = $request->except('usua_foto');
 
-            // 5. Upload de Imagem (Mantido igual)
             if ($request->hasFile('usua_foto') && $request->file('usua_foto')->isValid()) {
                 $file = $request->file('usua_foto');
                 $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
@@ -212,7 +214,6 @@ class InstituicaoUsuarioController extends Controller
         }
     }
 
-    // Função Auxiliar para gerar Thumbnail sem libs externas pesadas
     private function gerarMiniatura($origem, $destino, $maxW, $maxH) {
         list($largura, $altura, $tipo) = getimagesize($origem);
 
