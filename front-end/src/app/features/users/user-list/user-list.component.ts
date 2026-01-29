@@ -9,6 +9,8 @@ import {UserService} from "../../../core/services/user.service";
 import {ToastService} from "../../../shared/ui/toast/toast.service";
 import {User} from "../../../core/models/user.interface";
 import {PaginationComponent} from "../../../shared/ui/pagination/pagination.component";
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-user-list',
@@ -21,13 +23,17 @@ export class UserListComponent implements OnInit {
   private readonly userService = inject(UserService);
   private toast = inject(ToastService);
 
+  // Signals de Filtro
+  searchQuery = signal<string>('');
+  selectedPerfil = signal('');
+  selectedStatus = signal('todos');
+
+  // Signals de Paginação
   currentPage = signal(1);
   pageSize = signal(7);
   totalItems = signal(0);
-  // totalPages = signal(0);
   totalPages = computed(() => Math.ceil(this.totalItems() / this.pageSize()));
 
-  searchQuery = signal<string>('');
   selectedUser = signal<User | null>(null);
 
   showConfirmModal = signal<boolean>(false);
@@ -35,6 +41,8 @@ export class UserListComponent implements OnInit {
 
   users = signal<User[]>([]);
   isLoading = signal<boolean>(true);
+
+  private searchSubject = new Subject<string>();
 
   filteredUsers = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
@@ -49,22 +57,48 @@ export class UserListComponent implements OnInit {
   });
 
   ngOnInit() {
+    // Configura o debounce da pesquisa (espera 500ms parar de digitar)
+    this.searchSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    ).subscribe(term => {
+      this.searchQuery.set(term);
+      this.currentPage.set(1);
+      this.refreshUsers();
+    });
+
+    this.refreshUsers();
+  }
+
+  onSearchInput(event: any) {
+    this.searchSubject.next(event.target.value);
+  }
+
+  onFilterChange() {
+    this.currentPage.set(1);
     this.refreshUsers();
   }
 
   refreshUsers() {
     this.isLoading.set(true);
 
-    this.userService.getUsers(this.currentPage(), this.pageSize()).subscribe({
+    this.userService.getUsers(
+      this.currentPage(),
+      this.pageSize(),
+      this.searchQuery(),
+      this.selectedPerfil(),
+      this.selectedStatus()
+    ).subscribe({
       next: (response) => {
         this.users.set(response.data);
         this.totalItems.set(response.meta.total);
-
         this.isLoading.set(false);
       },
-      error: () => {
-        this.toast.show('Erro ao carregar dados', 'error');
+      error: (err) => {
+        console.error(err);
+        this.toast.show('Erro ao carregar usuários. Tente novamente.', 'error');
         this.isLoading.set(false);
+        this.users.set([]);
       }
     });
   }
