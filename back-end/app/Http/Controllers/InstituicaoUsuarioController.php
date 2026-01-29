@@ -69,48 +69,45 @@ class InstituicaoUsuarioController extends Controller
         try {
             $inst_codigo = $request->header('inst_codigo', 1);
 
+            // Filtros
+            $filtros = [
+                'search' => $request->input('search'),
+                'perfil' => $request->input('perfil'),
+                'status' => $request->input('status')
+            ];
+
+            $perPage = 100;
             if ($request->has('limit')) {
-                $perPage = (int) $request->input('limit');
-                $perPage = ($perPage > 100) ? 100 : $perPage;
-            } else {
-                if ($request->has('offset')) {
-                    $perPage = config('constants.SEGUNDO_LIMIT', 50);
-                } else {
-                    $perPage = config('constants.PRIMEIRO_LIMIT', 100);
-                }
+                $perPage = min((int)$request->input('limit'), 100);
+            } elseif ($request->has('offset')) {
+                $perPage = config('constants.SEGUNDO_LIMIT', 50);
             }
 
-            if ($request->has('page')) {
-                $page = (int) $request->input('page');
-                $offset = ($page - 1) * $perPage;
-            } else {
-                $page = 1;
-                $offset = (int) $request->input('offset', 0);
+            $page = (int) $request->input('page', 1);
+            $offset = ($page - 1) * $perPage;
 
-                if ($offset > 0 && $perPage > 0) {
-                    $page = floor($offset / $perPage) + 1;
-                }
+            if (!$request->has('page') && $request->has('offset')) {
+                $offset = (int)$request->input('offset');
             }
 
             $limitSql = " LIMIT $perPage OFFSET $offset";
 
-            $usuarios = InstituicaoUsuarioRepository::listar($inst_codigo, $limitSql);
-
-            $total = InstituicaoUsuarioRepository::contar($inst_codigo);
+            $usuarios = InstituicaoUsuarioRepository::listar($inst_codigo, $limitSql, $filtros);
+            $total = InstituicaoUsuarioRepository::contar($inst_codigo, $filtros);
 
             return response()->json([
                 'success' => true,
                 'data' => $usuarios,
                 'meta' => [
                     'total' => (int) $total,
-                    'page' => (int) $page,
-                    'last_page' => ceil($total / $perPage),
-                    'per_page' => (int) $perPage
+                    'page' => $page,
+                    'last_page' => ceil($total / ($perPage > 0 ? $perPage : 1)),
+                    'per_page' => $perPage
                 ]
             ], 200);
 
         } catch (\Exception $e) {
-            return new JsonResponse(['success' => false, 'data' => '', 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
