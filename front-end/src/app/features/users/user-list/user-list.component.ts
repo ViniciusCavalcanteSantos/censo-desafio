@@ -11,6 +11,7 @@ import {User} from "../../../core/models/user.interface";
 import {PaginationComponent} from "../../../shared/ui/pagination/pagination.component";
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import {environment} from "../../../../environments/environment";
 
 @Component({
   selector: 'app-user-list',
@@ -22,6 +23,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 export class UserListComponent implements OnInit {
   private readonly userService = inject(UserService);
   private toast = inject(ToastService);
+
+  viewingImage = signal<string | null>(null);
 
   // Signals de Filtro
   searchQuery = signal<string>('');
@@ -102,6 +105,7 @@ export class UserListComponent implements OnInit {
     });
   }
 
+
   onPageChange(newPage: number) {
     this.currentPage.set(newPage);
     this.refreshUsers();
@@ -111,11 +115,32 @@ export class UserListComponent implements OnInit {
     return name ? name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : '';
   }
 
-  removeUser(user: User) {
-    if (confirm(`ATENÇÃO: Deseja realmente remover o acesso de ${user.usua_nome}?`)) {
-      this.toast.show(`Usuário removido com sucesso!`, 'success');
-      window.location.reload();
+  resolveImageUrl(path: string | undefined | null): string {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+
+    const baseUrl = environment.apiUrl.endsWith('/') ? environment.apiUrl.slice(0, -1) : environment.apiUrl;
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+
+    return `${baseUrl}/${cleanPath}`;
+  }
+
+  openImageModal(user: User) {
+    if (user.imgError) return;
+
+    const imagePath = user.usua_foto || user.usua_foto_miniatura;
+
+    if (imagePath) {
+      this.viewingImage.set(this.resolveImageUrl(imagePath));
     }
+  }
+
+  closeImageModal() {
+    this.viewingImage.set(null);
+  }
+
+  handleImageError(user: User) {
+    user.imgError = true;
   }
 
   handleBlacklistAction(user: User) {

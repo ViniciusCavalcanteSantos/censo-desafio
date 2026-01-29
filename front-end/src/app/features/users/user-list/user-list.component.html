@@ -39,7 +39,7 @@
                 <input
                         type="text"
                         (input)="onSearchInput($event)"
-                        placeholder="Pesquisar por nome ou e-mail..."
+                        placeholder="Pesquisar"
                         class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-sm placeholder-gray-400">
             </div>
 
@@ -117,8 +117,26 @@
 
                             <td class="px-8 py-4">
                                 <div class="flex items-center gap-4">
-                                    <div class="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold shadow-sm group-hover:bg-blue-100 transition-colors">
-                                        {{ getInitials(user.usua_nome) }}
+                                    <div class="h-10 w-10 rounded-lg shadow-sm overflow-hidden relative bg-blue-50 shrink-0 group/avatar">
+                                        @if ((user.usua_foto_miniatura || user.usua_foto) && !user.imgError) {
+                                            <div class="relative w-full h-full cursor-pointer" (click)="openImageModal(user)">
+                                                <img
+                                                        [src]="resolveImageUrl(user.usua_foto_miniatura || user.usua_foto)"
+                                                        (error)="handleImageError(user)"
+                                                        alt="Foto de {{ user.usua_nome }}"
+                                                        class="h-full w-full object-cover transition-transform duration-500 group-hover/avatar:scale-110"
+                                                >
+
+                                                <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200">
+                                                    <i class="fa-solid fa-eye text-white text-xs drop-shadow-md"></i>
+                                                </div>
+                                            </div>
+
+                                        } @else {
+                                            <div class="h-full w-full flex items-center justify-center text-blue-600 text-sm font-bold group-hover/avatar:bg-blue-100 transition-colors cursor-default">
+                                                {{ getInitials(user.usua_nome) }}
+                                            </div>
+                                        }
                                     </div>
                                     <div>
                                         <div class="text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
@@ -234,4 +252,18 @@
         </p>
 
     </app-confirm-modal>
+}
+
+@if (viewingImage()) {
+    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fadeIn"
+         (click)="closeImageModal()">
+
+        <button class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-2 z-10">
+            <i class="fa-solid fa-xmark text-3xl"></i>
+        </button>
+
+        <img [src]="viewingImage()"
+             (click)="$event.stopPropagation()"
+             class="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-scaleIn">
+    </div>
 }
