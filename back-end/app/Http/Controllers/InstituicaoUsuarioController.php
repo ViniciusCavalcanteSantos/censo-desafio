@@ -14,6 +14,7 @@ use App\Repository\InstituicaoUsuarioRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Validator;
 
 class InstituicaoUsuarioController extends Controller
 {
@@ -126,29 +127,129 @@ class InstituicaoUsuarioController extends Controller
         }
     }
 
-    public function salvar(\Illuminate\Http\Request $request)
+    public function salvar(Request $request)
     {
-        $id = $request->input('inst_usua_id');
-        $nome = $request->input('usua_nome');
-        $perfilNome = $request->input('usuario_perfil');
+        try {
+            // 1. Definição das Regras (Apenas Nome e Email obrigatórios)
+            $rules = [
+                'inst_usua_id'    => 'required|integer',
+                'usuario_nome'    => 'required|string|max:255',
+                'usuario_email'   => 'required|email|max:255',
 
-        $instUser = \DB::table('censo.instituicao_usuarios')->where('inst_usua_id', $id)->first();
+                // Campos agora Opcionais (nullable)
+                'usuario_codigo'  => 'nullable|string|max:50',
+                'usuario_cpf'     => 'nullable|digits:11', // Se vier, tem que ser 11 dígitos
+                'usuario_funcao'  => 'nullable|string',
 
-        if ($instUser) {
-            \DB::table('compartilhados.id_usuarios')
-                ->where('usua_id', $instUser->usua_id)
-                ->update(['usua_nome' => $nome]);
+                // Sexo restrito a M ou F
+                'usuario_sexo'    => 'nullable|in:M,F',
+
+                'data_nascimento' => 'nullable|date_format:Y-m-d',
+                'usua_foto'       => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            ];
+
+            // 2. Mensagens de Erro Customizadas (Pt-BR)
+            $messages = [
+                'required'    => 'O campo :attribute é obrigatório.',
+                'email'       => 'O campo :attribute deve conter um endereço de e-mail válido.',
+                'max'         => 'O campo :attribute não pode ter mais que :max caracteres.',
+                'digits'      => 'O campo :attribute deve conter exatamente :digits dígitos.',
+                'in'          => 'O valor selecionado para :attribute é inválido (apenas M ou F).',
+                'date_format' => 'O campo :attribute não corresponde ao formato data (AAAA-MM-DD).',
+                'image'       => 'O arquivo enviado para :attribute deve ser uma imagem.',
+                'mimes'       => 'A imagem deve ser do tipo: jpeg, png ou jpg.',
+                'integer'     => 'O campo :attribute deve ser um número inteiro.',
+            ];
+
+            // 3. Apelidos para os campos (Para não aparecer "usuario_nome" na mensagem)
+            $customAttributes = [
+                'usuario_nome'    => 'Nome',
+                'usuario_email'   => 'E-mail',
+                'usuario_codigo'  => 'Matrícula/Código',
+                'usuario_cpf'     => 'CPF',
+                'usuario_funcao'  => 'Função/Perfil',
+                'usuario_sexo'    => 'Sexo',
+                'data_nascimento' => 'Data de Nascimento',
+                'usua_foto'       => 'Foto'
+            ];
+
+            // Executa Validação
+            $validator = Validator::make($request->all(), $rules, $messages, $customAttributes);
+
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+            }
+
+            // 4. Verificação de Duplicidade (E-mail)
+            if (InstituicaoUsuarioRepository::verificarEmailDuplicado($request->input('usuario_email'), $request->input('inst_usua_id'))) {
+                return response()->json(['success' => false, 'message' => 'Este e-mail já está sendo utilizado por outro usuário.'], 409);
+            }
+
+            $dados = $request->except('usua_foto');
+
+            // 5. Upload de Imagem (Mantido igual)
+            if ($request->hasFile('usua_foto') && $request->file('usua_foto')->isValid()) {
+                $file = $request->file('usua_foto');
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $uploadPath = base_path('public/uploads/usuarios');
+
+                if (!file_exists($uploadPath)) mkdir($uploadPath, 0777, true);
+
+                $file->move($uploadPath, $filename);
+
+                $dados['usua_foto'] = 'uploads/usuarios/' . $filename;
+                $dados['usua_foto_miniatura'] = 'uploads/usuarios/thumb_' . $filename;
+
+                $this->gerarMiniatura($uploadPath . '/' . $filename, $uploadPath . '/thumb_' . $filename, 150, 150);
+            }
+
+            InstituicaoUsuarioRepository::salvar($dados);
+
+            return response()->json(['success' => true, 'message' => 'Usuário salvo com sucesso!'], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Erro interno: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // Função Auxiliar para gerar Thumbnail sem libs externas pesadas
+    private function gerarMiniatura($origem, $destino, $maxW, $maxH) {
+        list($largura, $altura, $tipo) = getimagesize($origem);
+
+        // Carrega imagem baseada no tipo
+        switch ($tipo) {
+            case IMAGETYPE_JPEG: $img = imagecreatefromjpeg($origem); break;
+            case IMAGETYPE_PNG:  $img = imagecreatefrompng($origem); break;
+            default: return false;
         }
 
-        $perfId = 1;
-        if ($perfilNome === 'Professor') $perfId = 2;
-        if ($perfilNome === 'Diretor') $perfId = 3;
+        // Calcula proporção
+        $ratio = $largura / $altura;
+        if ($maxW / $maxH > $ratio) {
+            $maxW = $maxH * $ratio;
+        } else {
+            $maxH = $maxW / $ratio;
+        }
 
-        \DB::table('censo.usuario_perfil')
-            ->where('inst_usua_id', $id)
-            ->update(['perf_id' => $perfId]);
+        // Cria nova imagem vazia
+        $nova = imagecreatetruecolor($maxW, $maxH);
 
-        return response()->json(['success' => true]);
+        // Preserva transparência se for PNG
+        if ($tipo == IMAGETYPE_PNG) {
+            imagealphablending($nova, false);
+            imagesavealpha($nova, true);
+        }
+
+        // Redimensiona
+        imagecopyresampled($nova, $img, 0, 0, 0, 0, $maxW, $maxH, $largura, $altura);
+
+        // Salva
+        if ($tipo == IMAGETYPE_JPEG) imagejpeg($nova, $destino, 80); // Qualidade 80
+        if ($tipo == IMAGETYPE_PNG)  imagepng($nova, $destino);
+
+        imagedestroy($img);
+        imagedestroy($nova);
+        return true;
     }
 
     public function removerBlacklist(Request $request) {
