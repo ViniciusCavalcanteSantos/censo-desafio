@@ -98,6 +98,31 @@ class InstituicaoUsuarioController extends Controller
         }
     }
 
+    public function salvar(\Illuminate\Http\Request $request)
+    {
+        $id = $request->input('inst_usua_id');
+        $nome = $request->input('usua_nome');
+        $perfilNome = $request->input('usuario_perfil');
+
+        $instUser = \DB::table('censo.instituicao_usuarios')->where('inst_usua_id', $id)->first();
+
+        if ($instUser) {
+            \DB::table('compartilhados.id_usuarios')
+                ->where('usua_id', $instUser->usua_id)
+                ->update(['usua_nome' => $nome]);
+        }
+
+        $perfId = 1;
+        if ($perfilNome === 'Professor') $perfId = 2;
+        if ($perfilNome === 'Diretor') $perfId = 3;
+
+        \DB::table('censo.usuario_perfil')
+            ->where('inst_usua_id', $id)
+            ->update(['perf_id' => $perfId]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function removerBlacklist(Request $request) {
         try {
             $email = $request->input('email');
