@@ -19,6 +19,7 @@ class InstituicaoUsuarioRepository
                 
                 -- Usamos MAX para garantir compatibilidade com o GROUP BY
                 MAX(IF(" . config('database.email_schema')  . ".em_black_list.black_list_id IS NULL, 0, 1)) AS is_blacklisted,
+                MAX(DATE_ADD(" . config('database.email_schema')  . ".em_black_list.black_list_data_inclusao, INTERVAL $horasLimite HOUR)) AS blacklist_deadline,
                 
                 MAX(CASE 
                     WHEN " . config('database.email_schema')  . ".em_black_list.black_list_id IS NULL THEN 0
