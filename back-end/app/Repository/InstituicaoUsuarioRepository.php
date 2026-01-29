@@ -15,25 +15,23 @@ class InstituicaoUsuarioRepository
 
         $bindings = ['inst_codigo' => $inst_codigo];
 
-        // 1. Filtro de Pesquisa (CORREÇÃO AQUI)
-        // O PDO não gosta de repetir :search, então criamos :search_nome e :search_email
         if (!empty($filtros['search'])) {
             $term = '%' . $filtros['search'] . '%';
 
             $where .= " AND (" . config('database.compartilhados_schema')  . ".id_usuarios.usua_nome LIKE :search_nome 
-                        OR " . config('database.compartilhados_schema')  . ".id_usuarios.usua_email LIKE :search_email) ";
-
+                        OR " . config('database.compartilhados_schema')  . ".id_usuarios.usua_email LIKE :search_email
+                        OR " . config('database.censo_schema')  . ".instituicao_usuarios.inst_usua_codigo LIKE :search_codigo) ";
+         
             $bindings['search_nome'] = $term;
             $bindings['search_email'] = $term;
+            $bindings['search_codigo'] = $term;
         }
 
-        // 2. Filtro de Perfil
         if (!empty($filtros['perfil'])) {
             $where .= " AND " . config('database.censo_schema')  . ".instituicao_perfil.perf_descricao = :perfil ";
             $bindings['perfil'] = $filtros['perfil'];
         }
 
-        // 3. Filtro de Status
         if (!empty($filtros['status'])) {
             if ($filtros['status'] === 'ativo') {
                 $where .= " AND " . config('database.email_schema')  . ".em_black_list.black_list_id IS NULL ";
@@ -113,31 +111,27 @@ class InstituicaoUsuarioRepository
 
     public static function salvar($dados)
     {
-        // 1. Busca vínculo
         $instUsuario = DB::table(config('database.censo_schema') . '.instituicao_usuarios')
             ->where('inst_usua_id', $dados['inst_usua_id'])
             ->first();
 
         if (!$instUsuario) throw new \Exception("Usuário não encontrado.");
 
-        // 2. Atualiza Tabela de Vínculo (Código)
         DB::table(config('database.censo_schema') . '.instituicao_usuarios')
             ->where('inst_usua_id', $dados['inst_usua_id'])
             ->update([
-                'inst_usua_codigo' => $dados['usuario_codigo'], // Atualiza Matrícula/Código
-                // 'updated_at' => date('Y-m-d H:i:s')
+                'inst_usua_codigo' => $dados['usuario_codigo'],
             ]);
 
-        // 3. Atualiza Tabela de Dados Pessoais (Nome, Email, CPF, Sexo, Data Nasc, Fotos)
         $updateData = [
             'usua_nome' => $dados['usuario_nome'],
             'usua_email' => $dados['usuario_email'],
-            'usua_cpf'   => $dados['usuario_cpf'] ?? null, // Garante que a coluna existe no banco
+            'usua_cpf'   => $dados['usuario_cpf'] ?? null,
             'usua_sexo'  => $dados['usuario_sexo'] ?? null,
             'usua_data_nascimento' => $dados['data_nascimento'] ?? null,
         ];
 
-        // Só atualiza fotos se elas foram enviadas (para não apagar a existente se o user não trocou)
+
         if (isset($dados['usua_foto'])) {
             $updateData['usua_foto'] = $dados['usua_foto'];
             $updateData['usua_foto_miniatura'] = $dados['usua_foto_miniatura'];
@@ -146,8 +140,6 @@ class InstituicaoUsuarioRepository
         DB::table(config('database.compartilhados_schema') . '.id_usuarios')
             ->where('usua_id', $instUsuario->usua_id)
             ->update($updateData);
-
-        // 4. Atualiza Perfil (Função)
         if (isset($dados['usuario_funcao'])) {
             $perfId = ($dados['usuario_funcao'] == 'Professor') ? 2 : 1;
             DB::table(config('database.censo_schema') . '.usuario_perfil')
@@ -163,17 +155,27 @@ class InstituicaoUsuarioRepository
         $schemaCompartilhado = config('database.compartilhados_schema');
         $schemaCenso = config('database.censo_schema');
 
-        // Query base: procura o email na tabela de usuários
         $query = DB::table($schemaCompartilhado . '.id_usuarios')
             ->join($schemaCenso . '.instituicao_usuarios', $schemaCompartilhado . '.id_usuarios.usua_id', '=', $schemaCenso . '.instituicao_usuarios.usua_id')
             ->where($schemaCompartilhado . '.id_usuarios.usua_email', $email)
             ->where($schemaCenso . '.instituicao_usuarios.deleted_at', null);
 
-        // Se for edição, ignora o próprio usuário atual
         if ($instUsuaIdIgnorar) {
             $query->where($schemaCenso . '.instituicao_usuarios.inst_usua_id', '!=', $instUsuaIdIgnorar);
         }
 
         return $query->exists();
+    }
+
+    public static function verificarMatriculaDuplicada($codigo, $id, $inst_codigo)
+    {
+        if (empty($codigo)) {
+            return false;
+        }
+
+        return \App\Model\InstituicaoUsuarios::where('inst_usua_codigo', '=', $codigo)
+            ->where('inst_codigo', '=', $inst_codigo)
+            ->where('inst_usua_id', '<>', $id)
+            ->exists();
     }
 }
