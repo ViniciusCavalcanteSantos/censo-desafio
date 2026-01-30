@@ -29,7 +29,7 @@ describe('UserListComponent', () => {
       usua_nome: 'Bruno Lima',
       usua_email: 'bruno@teste.com',
       inst_usua_codigo: '1002',
-      usuario_perfil: 'Administrador',
+      usuario_perfil: 'Diretor',
       usua_cpf: '222.222.222-22',
       can_be_removed: 0,
       is_blacklisted: 1,
