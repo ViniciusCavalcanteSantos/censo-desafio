@@ -34,13 +34,13 @@ integrar as funcionalidades pedidas.
 
 ---
 
-## 📋 Pré-requisitos
+## Pré-requisitos
 
 - Docker e Docker Compose
 
 ---
 
-## 🚀 Instalação & Execução com o Docker
+## Instalação & Execução (Docker)
 
 1. Clone o repositório:
 ```bash
@@ -62,7 +62,7 @@ docker-compose up -d --build
 
 ---
 
-## 🔒 Regras de Negócio (Blacklist)
+## Regras de Negócio (Blacklist)
 
 O sistema possui um mecanismo de proteção para a remoção de e-mails da blacklist, garantindo que um usuário não seja removido imediatamente após a inclusão.
 
@@ -81,7 +81,7 @@ O sistema possui um mecanismo de proteção para a remoção de e-mails da black
     * Se o usuário estiver liberado, a interface permite a ação de remoção mediante confirmação.
 ---
 
-## 📡 Documentação da API
+## Documentação da API
 
 ### 1) Listar Usuários
 - **URL:** `GET /instituicao_usuarios/listar`
@@ -164,7 +164,7 @@ O sistema possui um mecanismo de proteção para a remoção de e-mails da black
 
 ---
 
-## 💻 Front-end (Angular) — Comportamento
+## Front-end (comportamento)
 
 - Tabela de listagem com nome, e-mail, perfil e status da blacklist.
 - Ícone indicador para e-mails na blacklist + tooltip que informa:
@@ -175,7 +175,7 @@ O sistema possui um mecanismo de proteção para a remoção de e-mails da black
 
 ---
 
-## 🧪 Testes
+## Testes
 
 Executar:
 ```bash
